@@ -1,0 +1,276 @@
+{
+  "entities": {
+    "Dataset": {
+      "title": "Dataset",
+      "description": "Metadata and status for an uploaded Excel consumption dataset",
+      "type": "object",
+      "properties": {
+        "fileName": {
+          "type": "string",
+          "description": "Original file name",
+          "maxLength": 255
+        },
+        "fileSize": {
+          "type": "number",
+          "description": "File size in bytes"
+        },
+        "fileStorageUrl": {
+          "type": "string",
+          "description": "Firebase Storage download URL or storage path",
+          "maxLength": 1000
+        },
+        "uploadedBy": {
+          "type": "string",
+          "description": "User ID of uploader",
+          "maxLength": 128
+        },
+        "uploadedByEmail": {
+          "type": "string",
+          "description": "Email of uploader",
+          "maxLength": 255
+        },
+        "uploadedAt": {
+          "type": "string",
+          "description": "ISO timestamp of upload"
+        },
+        "rowCount": {
+          "type": "number",
+          "description": "Total rows uploaded"
+        },
+        "validCount": {
+          "type": "number",
+          "description": "Total valid rows"
+        },
+        "warningCount": {
+          "type": "number",
+          "description": "Total warning rows"
+        },
+        "invalidCount": {
+          "type": "number",
+          "description": "Total invalid rows"
+        },
+        "columnMapping": {
+          "type": "string",
+          "description": "JSON string of detected or configured column mappings",
+          "maxLength": 4000
+        },
+        "status": {
+          "type": "string",
+          "description": "Dataset status: uploaded, analyzed, archived",
+          "enum": ["uploaded", "analyzed", "archived"]
+        },
+        "yearsCovered": {
+          "type": "string",
+          "description": "Comma-separated list of years covered",
+          "maxLength": 200
+        },
+        "materialCount": {
+          "type": "number",
+          "description": "Distinct materials found"
+        }
+      },
+      "required": ["fileName", "uploadedAt", "rowCount", "status"]
+    },
+    "NormalizedRecord": {
+      "title": "NormalizedRecord",
+      "description": "Cleaned and normalized consumption record",
+      "type": "object",
+      "properties": {
+        "datasetId": {
+          "type": "string",
+          "description": "Parent dataset ID",
+          "maxLength": 128
+        },
+        "materialCode": {
+          "type": "string",
+          "description": "Unique material or item code",
+          "maxLength": 100
+        },
+        "materialName": {
+          "type": "string",
+          "description": "Material or item description",
+          "maxLength": 255
+        },
+        "category": {
+          "type": "string",
+          "description": "Material classification category",
+          "maxLength": 100
+        },
+        "uom": {
+          "type": "string",
+          "description": "Unit of measurement (MT, KG, LTR, PCS, etc.)",
+          "maxLength": 50
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of transaction or period",
+          "maxLength": 50
+        },
+        "year": {
+          "type": "number",
+          "description": "Calendar year"
+        },
+        "month": {
+          "type": "number",
+          "description": "Month number 1-12"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Consumption quantity"
+        },
+        "purchaseQuantity": {
+          "type": "number",
+          "description": "Historical purchase quantity if present"
+        },
+        "stock": {
+          "type": "number",
+          "description": "Current stock quantity if present"
+        },
+        "supplier": {
+          "type": "string",
+          "description": "Supplier or vendor name",
+          "maxLength": 200
+        },
+        "department": {
+          "type": "string",
+          "description": "Consuming department or plant section",
+          "maxLength": 200
+        },
+        "unitPrice": {
+          "type": "number",
+          "description": "Optional unit price for ABC financial valuation"
+        },
+        "leadTimeDays": {
+          "type": "number",
+          "description": "Supplier lead time in days"
+        },
+        "incomingQuantity": {
+          "type": "number",
+          "description": "Confirmed incoming open purchase orders"
+        }
+      },
+      "required": ["datasetId", "materialCode", "materialName", "year", "month", "quantity"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "User configuration parameters for purchasing forecasting and inventory thresholds",
+      "type": "object",
+      "properties": {
+        "planningPeriodMonths": {
+          "type": "number",
+          "description": "Planning horizon in months (default 2)"
+        },
+        "safetyStockPct": {
+          "type": "number",
+          "description": "Safety stock buffer percentage (e.g. 20 for 20%)"
+        },
+        "weightLatestYear": {
+          "type": "number",
+          "description": "Forecast weighting for latest year (default 50)"
+        },
+        "weightPrevYear": {
+          "type": "number",
+          "description": "Forecast weighting for previous year (default 30)"
+        },
+        "weightOlderYears": {
+          "type": "number",
+          "description": "Forecast weighting for older years (default 20)"
+        },
+        "defaultLeadTimeDays": {
+          "type": "number",
+          "description": "Default supplier lead time in days"
+        },
+        "criticalStockDays": {
+          "type": "number",
+          "description": "Stock coverage critical threshold in days"
+        },
+        "lowStockDays": {
+          "type": "number",
+          "description": "Stock coverage low threshold in days"
+        },
+        "normalStockDays": {
+          "type": "number",
+          "description": "Stock coverage normal upper threshold in days"
+        },
+        "ignoreZeroConsumption": {
+          "type": "boolean",
+          "description": "Whether to ignore zero-consumption months when calculating monthly averages"
+        },
+        "abcThresholdA": {
+          "type": "number",
+          "description": "Cumulative percentage threshold for Class A (e.g. 70)"
+        },
+        "abcThresholdB": {
+          "type": "number",
+          "description": "Cumulative percentage threshold for Class B (e.g. 90)"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp"
+        }
+      },
+      "required": ["planningPeriodMonths", "safetyStockPct"]
+    },
+    "Scenario": {
+      "title": "Scenario",
+      "description": "Saved simulation scenario for what-if purchasing analysis",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Scenario title",
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "description": "Scenario notes",
+          "maxLength": 500
+        },
+        "planningPeriodMonths": {
+          "type": "number",
+          "description": "Planning months"
+        },
+        "safetyStockPct": {
+          "type": "number",
+          "description": "Safety stock %"
+        },
+        "demandGrowthPct": {
+          "type": "number",
+          "description": "Demand surge or growth % modifier"
+        },
+        "leadTimeDays": {
+          "type": "number",
+          "description": "Lead time in days"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO creation timestamp"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "User identifier",
+          "maxLength": 128
+        }
+      },
+      "required": ["name", "planningPeriodMonths", "safetyStockPct", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/datasets/{datasetId}": {
+      "schema": "Dataset",
+      "description": "Collection of uploaded dataset metadata and analysis summaries"
+    },
+    "/datasets/{datasetId}/records/{recordId}": {
+      "schema": "NormalizedRecord",
+      "description": "Subcollection of cleaned normalized records for an uploaded dataset"
+    },
+    "/settings/{userId}": {
+      "schema": "Settings",
+      "description": "Per-user or global purchasing and inventory analysis settings"
+    },
+    "/scenarios/{scenarioId}": {
+      "schema": "Scenario",
+      "description": "Saved planning scenarios"
+    }
+  }
+}

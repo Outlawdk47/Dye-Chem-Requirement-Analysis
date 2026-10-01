@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'viperasad@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidDataset(data) {
+      return data.fileName is string && data.fileName.size() <= 255
+        && data.rowCount is number && data.rowCount >= 0
+        && (data.status == 'uploaded' || data.status == 'analyzed' || data.status == 'archived')
+        && (!('uploadedBy' in data) || (data.uploadedBy is string && data.uploadedBy.size() <= 128))
+        && (!('fileStorageUrl' in data) || (data.fileStorageUrl is string && data.fileStorageUrl.size() <= 1000))
+        && (!('columnMapping' in data) || (data.columnMapping is string && data.columnMapping.size() <= 8000));
+    }
+
+    function isValidRecord(data) {
+      return data.materialCode is string && data.materialCode.size() <= 100
+        && data.materialName is string && data.materialName.size() <= 255
+        && data.year is number && data.month is number
+        && data.quantity is number;
+    }
+
+    function isValidSettings(data) {
+      return data.planningPeriodMonths is number && data.planningPeriodMonths > 0 && data.planningPeriodMonths <= 36
+        && data.safetyStockPct is number && data.safetyStockPct >= 0 && data.safetyStockPct <= 500;
+    }
+
+    function isValidScenario(data) {
+      return data.name is string && data.name.size() <= 100
+        && data.planningPeriodMonths is number
+        && data.safetyStockPct is number;
+    }
+
+    // Datasets
+    match /datasets/{datasetId} {
+      allow get: if isValidId(datasetId);
+      allow list: if true;
+      
+      allow create: if isValidId(datasetId) && isValidDataset(incoming());
+
+      allow update: if isValidId(datasetId) && isValidDataset(incoming()) && (
+        isAdmin() || !isSignedIn() || existing().uploadedBy == request.auth.uid || (
+          incoming().uploadedBy == existing().uploadedBy &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'columnMapping', 'materialCount', 'validCount', 'warningCount', 'invalidCount', 'summaryStats', 'yearsCovered', 'updatedAt'])
+        )
+      );
+
+      allow delete: if isValidId(datasetId) && (
+        isAdmin() || !isSignedIn() || existing().uploadedBy == request.auth.uid
+      );
+
+      // Subcollection: Records
+      match /records/{recordId} {
+        allow get, list: if isValidId(datasetId);
+
+        allow create: if isValidId(datasetId) && isValidId(recordId) && isValidRecord(incoming());
+
+        allow update, delete: if isValidId(datasetId) && isValidId(recordId) && (
+          isAdmin() || !isSignedIn() || get(/databases/$(database)/documents/datasets/$(datasetId)).data.uploadedBy == request.auth.uid
+        );
+      }
+    }
+
+    // User settings
+    match /settings/{userId} {
+      allow get: if isValidId(userId);
+      allow list: if true;
+      allow create, update: if isValidId(userId) && isValidSettings(incoming());
+      allow delete: if isValidId(userId) && (isAdmin() || !isSignedIn() || userId == request.auth.uid);
+    }
+
+    // Scenarios
+    match /scenarios/{scenarioId} {
+      allow get: if isValidId(scenarioId);
+      allow list: if true;
+      allow create: if isValidId(scenarioId) && isValidScenario(incoming());
+      allow update: if isValidId(scenarioId) && isValidScenario(incoming()) && (
+        isAdmin() || !isSignedIn() || existing().createdBy == request.auth.uid
+      );
+      allow delete: if isValidId(scenarioId) && (isAdmin() || !isSignedIn() || existing().createdBy == request.auth.uid);
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+  }
+}

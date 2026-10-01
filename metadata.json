@@ -1,0 +1,6 @@
+{
+  "name": "Purchasing Requirement Analysis",
+  "description": "Enterprise-grade material consumption forecasting, purchasing requirement planning, safety stock calculation, and inventory optimization dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
